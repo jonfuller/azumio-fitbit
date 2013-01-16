@@ -24,17 +24,18 @@ class Azumio
   end
 
   def export_heart_rate
-    csv_data = @agent.page.links.select{|l| l.text == 'Export Instant Heart Rate data'}.first.click.body
+    export_link = "https://api.azumio.com/v1/checkins?_format=csv&_fields=created,type,value,note&type=heartrate"
+    csv_data = @agent.get(export_link).content
     CSV.parse(csv_data, headers: :first_row).by_row.map do |row|
       {
-        date: DateTime.parse(r['created']),
-        value: r['value'],
-        note: r['note']}
+        date: Time.at(row['created'].to_i/1000).to_datetime,
+        value: row['value'],
+        note: row['note']
       }
+    end
   end
 
   def is_logged_in?
     @agent.page.links.any?{|t| t.text == "LOGOUT"}
   end
 end
-
